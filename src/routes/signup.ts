@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express'
 import { z } from 'zod'
 import pool from '../db'
 import { generateRefId } from '../utils/refId'
+import { asyncHandler } from '../utils/asyncHandler'
 
 const router = Router()
 
@@ -13,7 +14,7 @@ const schema = z.object({
   referredBy: z.string().optional(),
 })
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const parsed = schema.safeParse(req.body)
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten().fieldErrors })
@@ -88,6 +89,6 @@ router.post('/', async (req: Request, res: Response) => {
   const referralLink = `${baseUrl}/join?ref=${refId}`
 
   return res.status(201).json({ refId, referralLink })
-})
+}))
 
 export default router

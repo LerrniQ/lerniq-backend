@@ -1,11 +1,12 @@
 import { Router, Request, Response } from 'express'
 import pool from '../db'
+import { asyncHandler } from '../utils/asyncHandler'
 
 const router = Router()
 
 // Typeform sends POST with the full form_response payload.
 // We read the hidden field `ref` and credit the referrer.
-router.post('/typeform', async (req: Request, res: Response) => {
+router.post('/typeform', asyncHandler(async (req: Request, res: Response) => {
   const ref = req.body?.form_response?.hidden?.ref as string | undefined
 
   if (!ref) {
@@ -19,6 +20,6 @@ router.post('/typeform', async (req: Request, res: Response) => {
   )
 
   return res.status(200).json({ ok: true })
-})
+}))
 
 export default router

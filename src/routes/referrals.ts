@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express'
 import pool from '../db'
+import { asyncHandler } from '../utils/asyncHandler'
 
 const router = Router()
 
-router.get('/:refId', async (req: Request, res: Response) => {
+router.get('/:refId', asyncHandler(async (req: Request, res: Response) => {
   const { refId } = req.params
 
   const result = await pool.query(
@@ -16,6 +17,6 @@ router.get('/:refId', async (req: Request, res: Response) => {
   }
 
   return res.status(200).json(result.rows[0])
-})
+}))
 
 export default router
