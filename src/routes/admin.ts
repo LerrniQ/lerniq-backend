@@ -14,7 +14,14 @@ router.get('/course-reps', asyncHandler(async (_req: Request, res: Response) => 
     WHERE  role = 'course_rep'
     ORDER  BY referral_count DESC, created_at DESC
   `)
-  return res.status(200).json(result.rows)
+
+  const typeformBase = process.env.LECTURER_TYPEFORM_URL ?? ''
+  const rows = result.rows.map((r) => ({
+    ...r,
+    typeform_link: typeformBase ? `${typeformBase}?ref=${r.ref_id}` : null,
+  }))
+
+  return res.status(200).json(rows)
 }))
 
 // Everyone who signed up via /join (all roles)
