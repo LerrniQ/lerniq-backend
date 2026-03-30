@@ -6,12 +6,13 @@ import { asyncHandler } from '../utils/asyncHandler'
 
 const router = Router()
 
-const LECTURER_TYPEFORM_URL = 'https://form.typeform.com/to/pxQ8Pmkf'
+const LECTURER_TYPEFORM_URL = process.env.LECTURER_TYPEFORM_URL ?? 'https://form.typeform.com/to/pxQ8Pmkf'
 
 const schema = z.object({
-  name:   z.string().min(2, 'Name must be at least 2 characters'),
-  email:  z.string().email('Invalid email address'),
-  school: z.string().min(2, 'School name must be at least 2 characters'),
+  name:   z.string().min(2,  'Name must be at least 2 characters'),
+  phone:  z.string().min(7,  'Enter a valid phone number'),
+  email:  z.string().email('Enter a valid email address').optional().or(z.literal('')),
+  school: z.string().min(2,  'School name must be at least 2 characters'),
 })
 
 router.post('/', asyncHandler(async (req: Request, res: Response) => {
@@ -20,12 +21,13 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     return res.status(400).json({ error: parsed.error.flatten().fieldErrors })
   }
 
-  const { name, email, school } = parsed.data
+  const { name, phone, email, school } = parsed.data
+  const cleanEmail = email?.trim() === '' ? undefined : email
 
-  // If already registered as a course rep, return their existing link
+  // If already registered by phone, return their existing link
   const existing = await pool.query(
-    'SELECT ref_id FROM users WHERE email = $1 AND role = $2',
-    [email, 'course_rep']
+    'SELECT ref_id FROM users WHERE phone = $1 AND role = $2',
+    [phone, 'course_rep']
   )
   if (existing.rows.length > 0) {
     const refId = existing.rows[0].ref_id as string
@@ -33,13 +35,24 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     return res.status(200).json({ refId, typeformLink, returning: true })
   }
 
-  // Reject if email belongs to a different role
-  const otherRole = await pool.query(
-    'SELECT id FROM users WHERE email = $1',
-    [email]
+  // Check phone isn't registered under a different role
+  const phoneClash = await pool.query(
+    'SELECT id FROM users WHERE phone = $1',
+    [phone]
   )
-  if (otherRole.rows.length > 0) {
-    return res.status(409).json({ error: 'This email is already registered under a different role.' })
+  if (phoneClash.rows.length > 0) {
+    return res.status(409).json({ error: 'This phone number is already registered.' })
+  }
+
+  // Check email uniqueness only if provided
+  if (cleanEmail) {
+    const emailClash = await pool.query(
+      'SELECT id FROM users WHERE email = $1',
+      [cleanEmail]
+    )
+    if (emailClash.rows.length > 0) {
+      return res.status(409).json({ error: 'This email is already registered.' })
+    }
   }
 
   // Generate unique refId
@@ -60,8 +73,8 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   }
 
   await pool.query(
-    'INSERT INTO users (name, email, school, role, ref_id) VALUES ($1, $2, $3, $4, $5)',
-    [name, email, school, 'course_rep', refId]
+    'INSERT INTO users (name, phone, email, school, role, ref_id) VALUES ($1, $2, $3, $4, $5, $6)',
+    [name, phone, cleanEmail ?? null, school, 'course_rep', refId]
   )
 
   const typeformLink = `${LECTURER_TYPEFORM_URL}?ref=${refId}`
