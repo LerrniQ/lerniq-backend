@@ -13,8 +13,18 @@ const app  = express()
 const PORT = process.env.PORT ?? 3000
 const isDev = process.env.NODE_ENV !== 'production'
 
+// FRONTEND_URL can be a single origin or comma-separated list
+// e.g. "https://lerniq.vercel.app,https://www.lerniq.co"
+const allowedOrigins = (process.env.FRONTEND_URL ?? '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean)
+
 app.use(cors({
-  origin: isDev ? '*' : process.env.FRONTEND_URL,
+  origin: isDev ? '*' : (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true)
+    cb(new Error(`CORS: origin ${origin} not allowed`))
+  },
   methods: ['GET', 'POST'],
 }))
 app.use(express.json())
