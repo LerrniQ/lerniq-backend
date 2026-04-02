@@ -3,10 +3,9 @@ import { z } from 'zod'
 import pool from '../db'
 import { generateRefId } from '../utils/refId'
 import { asyncHandler } from '../utils/asyncHandler'
+import { buildLecturerLink } from '../utils/lecturerLink'
 
 const router = Router()
-
-const LECTURER_TYPEFORM_URL = process.env.LECTURER_TYPEFORM_URL ?? 'https://form.typeform.com/to/pxQ8Pmkf'
 
 const schema = z.object({
   name:   z.string().min(2,  'Name must be at least 2 characters'),
@@ -31,8 +30,8 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   )
   if (existing.rows.length > 0) {
     const refId = existing.rows[0].ref_id as string
-    const typeformLink = `${LECTURER_TYPEFORM_URL}?ref=${refId}`
-    return res.status(200).json({ refId, typeformLink, returning: true })
+    const lecturerLink = buildLecturerLink(refId)
+    return res.status(200).json({ refId, lecturerLink, returning: true })
   }
 
   // Check phone isn't registered under a different role
@@ -77,8 +76,8 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     [name, phone, cleanEmail ?? null, school, 'course_rep', refId]
   )
 
-  const typeformLink = `${LECTURER_TYPEFORM_URL}?ref=${refId}`
-  return res.status(201).json({ refId, typeformLink })
+  const lecturerLink = buildLecturerLink(refId)
+  return res.status(201).json({ refId, lecturerLink })
 }))
 
 export default router

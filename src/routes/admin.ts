@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express'
 import pool from '../db'
 import { requireAdmin } from '../middleware/requireAdmin'
 import { asyncHandler } from '../utils/asyncHandler'
+import { buildLecturerLink } from '../utils/lecturerLink'
 
 const router = Router()
 router.use(requireAdmin)
@@ -15,10 +16,9 @@ router.get('/course-reps', asyncHandler(async (_req: Request, res: Response) => 
     ORDER  BY referral_count DESC, created_at DESC
   `)
 
-  const typeformBase = process.env.LECTURER_TYPEFORM_URL ?? ''
   const rows = result.rows.map((r) => ({
     ...r,
-    typeform_link: typeformBase ? `${typeformBase}?ref=${r.ref_id}` : null,
+    lecturer_link: buildLecturerLink(r.ref_id as string),
   }))
 
   return res.status(200).json(rows)
