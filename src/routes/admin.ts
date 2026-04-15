@@ -10,7 +10,7 @@ router.use(requireAdmin)
 // All course reps who have generated a lecturer link, sorted by referral count
 router.get('/course-reps', asyncHandler(async (_req: Request, res: Response) => {
   const result = await pool.query(`
-    SELECT name, email, school, ref_id, referral_count, created_at
+    SELECT name, email, phone, school, ref_id, referral_count, created_at
     FROM   users
     WHERE  role = 'course_rep'
     ORDER  BY referral_count DESC, created_at DESC
