@@ -7,8 +7,9 @@ import webhookRouter   from './routes/webhook'
 import referralsRouter from './routes/referrals'
 import authRouter          from './routes/auth'
 import adminRouter         from './routes/admin'
-import adminSurveysRouter  from './routes/adminSurveys'
-import publicSurveysRouter from './routes/publicSurveys'
+import adminSurveysRouter     from './routes/adminSurveys'
+import adminAmbassadorsRouter from './routes/adminAmbassadors'
+import publicSurveysRouter    from './routes/publicSurveys'
 import { seedAdmin }       from './seed'
 
 const app  = express()
@@ -38,9 +39,10 @@ app.use('/course-rep', courseRepRouter)
 app.use('/webhook',    webhookRouter)
 app.use('/referrals',  referralsRouter)
 app.use('/auth',            authRouter)
-app.use('/admin',           adminRouter)
-app.use('/admin/surveys',   adminSurveysRouter)
-app.use('/surveys',         publicSurveysRouter)
+app.use('/admin/surveys',      adminSurveysRouter)
+app.use('/admin/ambassadors',  adminAmbassadorsRouter)
+app.use('/admin',              adminRouter)
+app.use('/surveys',            publicSurveysRouter)
 
 // Global error handler
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
