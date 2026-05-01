@@ -52,12 +52,25 @@ CREATE TABLE IF NOT EXISTS survey_questions (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS ambassadors (
+  id         SERIAL PRIMARY KEY,
+  name       VARCHAR(255) NOT NULL,
+  email      VARCHAR(255),
+  phone      VARCHAR(30),
+  school     VARCHAR(255),
+  ref_id     VARCHAR(20) UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ambassadors_ref_id ON ambassadors (ref_id);
+
 CREATE TABLE IF NOT EXISTS survey_responses (
-  id           SERIAL PRIMARY KEY,
-  survey_id    INTEGER NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
-  ref_id       VARCHAR(20) REFERENCES users(ref_id) ON DELETE SET NULL,
-  answers      JSONB NOT NULL,
-  submitted_at TIMESTAMPTZ DEFAULT NOW()
+  id                 SERIAL PRIMARY KEY,
+  survey_id          INTEGER NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+  ref_id             VARCHAR(20) REFERENCES users(ref_id) ON DELETE SET NULL,
+  ambassador_ref_id  VARCHAR(20) REFERENCES ambassadors(ref_id) ON DELETE SET NULL,
+  answers            JSONB NOT NULL,
+  submitted_at       TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_surveys_slug          ON surveys (slug);
@@ -69,3 +82,6 @@ CREATE INDEX IF NOT EXISTS idx_survey_responses_sid  ON survey_responses (survey
 -- ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(30) UNIQUE;
 -- CREATE INDEX IF NOT EXISTS idx_users_phone ON users (phone);
 -- ALTER TABLE surveys ADD COLUMN IF NOT EXISTS audience VARCHAR(20) DEFAULT 'all' CHECK (audience IN ('all', 'student', 'lecturer', 'course_rep'));
+-- CREATE TABLE IF NOT EXISTS ambassadors (id SERIAL PRIMARY KEY, name VARCHAR(255) NOT NULL, email VARCHAR(255), phone VARCHAR(30), school VARCHAR(255), ref_id VARCHAR(20) UNIQUE NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW());
+-- CREATE INDEX IF NOT EXISTS idx_ambassadors_ref_id ON ambassadors (ref_id);
+-- ALTER TABLE survey_responses ADD COLUMN IF NOT EXISTS ambassador_ref_id VARCHAR(20) REFERENCES ambassadors(ref_id) ON DELETE SET NULL;

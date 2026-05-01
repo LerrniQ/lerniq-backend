@@ -95,24 +95,29 @@ router.post('/:slug/respond', asyncHandler(async (req: Request, res: Response) =
     }
   }
 
-  // Validate ref
-  let validRef: string | null = null
+  // Validate ref — check users first, then ambassadors
+  let validUserRef:       string | null = null
+  let validAmbassadorRef: string | null = null
   if (ref) {
-    const referrer = await pool.query('SELECT ref_id FROM users WHERE ref_id = $1', [ref])
-    if (referrer.rows.length > 0) validRef = ref
+    const [userRes, ambRes] = await Promise.all([
+      pool.query('SELECT ref_id FROM users       WHERE ref_id = $1', [ref]),
+      pool.query('SELECT ref_id FROM ambassadors WHERE ref_id = $1', [ref]),
+    ])
+    if (userRes.rows.length > 0)      validUserRef       = ref
+    else if (ambRes.rows.length > 0)  validAmbassadorRef = ref
   }
 
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
     await client.query(
-      'INSERT INTO survey_responses (survey_id, ref_id, answers) VALUES ($1,$2,$3)',
-      [surveyId, validRef, JSON.stringify(answers)]
+      'INSERT INTO survey_responses (survey_id, ref_id, ambassador_ref_id, answers) VALUES ($1,$2,$3,$4)',
+      [surveyId, validUserRef, validAmbassadorRef, JSON.stringify(answers)]
     )
-    if (validRef) {
+    if (validUserRef) {
       await client.query(
         'UPDATE users SET referral_count = referral_count + 1 WHERE ref_id = $1',
-        [validRef]
+        [validUserRef]
       )
     }
     await client.query('COMMIT')
